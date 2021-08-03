@@ -2,7 +2,7 @@
 <package>
   <name>Quadrilateral_Corner_Extraction</name>
   <version>1.0.0</version>
-  <description>The lidar_function package</description>
+  <description>Single quadrilateral corners detection package</description>
   <maintainer email="153415292@qq.com">yw</maintainer>
   <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
