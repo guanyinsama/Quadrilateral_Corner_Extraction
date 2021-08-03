@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Qt5Widgets)
 find_package(Qt5Core)
-
 find_package( OpenCV REQUIRED )
 
 catkin_package(

@@ -4,13 +4,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/registration/ndt.h>
-// #include <QApplication>
-// #include <QFileDialog>
-// #include <QDebug>
-// #include <QString>
 #include "cv.h"
 #include "highgui.h"
 #include "math.h"
@@ -19,21 +12,12 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-// #include <message_filters/subscriber.h>
-// #include <message_filters/synchronizer.h>
-// #include <message_filters/sync_policies/approximate_time.h>
-// #include <calibration_lidar_extrinsic/lidar_extrinsic_calibration.h>
+
 
 using namespace std;
-// using namespace message_filters;
 using namespace cv;
 
 #define C CV_PI / 3
-
-ros::Publisher filtered_pub;
-bool flag = true;
-Eigen::Quaterniond quat;
-Eigen::Vector3d ndt_translation;
 
 cv::Mat HSV;
 cv::Mat threshold_ori;
@@ -42,7 +26,6 @@ int Otsu(IplImage* src)
 {
     int height = src->height;
     int width = src->width;
-
     //histogram    
     float histogram[256] = { 0 };
     for (int i = 0; i < height; i++)
@@ -89,12 +72,7 @@ int Otsu(IplImage* src)
 
 void imageCallback(const sensor_msgs::ImageConstPtr &msg)
 {
-    std::cout << "nengyong1" << std::endl;
-    std::cout << "msg height:" << msg->height << std::endl;
-    std::cout << "msg width:" << msg->width << std::endl;
     cv::Mat cameraFeed;
-
-    // IplImage *pSrc = cvCreateImage(cvSize(msg->width, msg->height), IPL_DEPTH_8U, 1);
     cv_bridge::CvImageConstPtr cv_ptr;
     try
     {
@@ -106,19 +84,11 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
         exit(-1);
     }
  
- 
     cameraFeed = cv_ptr->image.clone();
-
-    // imshow("原图1", cameraFeed);
-
     IplImage temp = IplImage(cameraFeed);
-
     IplImage *ImgGray = &temp;
-
     IplImage *img = cvCreateImage(cvGetSize(ImgGray), IPL_DEPTH_8U, 1);
-
     cvCvtColor(ImgGray, img, CV_BGR2GRAY); //cvCvtColor(src,des,CV_BGR2GRAY)
-
     // cvNamedWindow("img", 1);
     // cvShowImage("img", img);
 
@@ -126,12 +96,10 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
     int threshold = Otsu(img);//最大类间方差阈值分割
     printf("threshold = %d\n", threshold);
     cvThreshold(img, dst, threshold, 255, CV_THRESH_BINARY);
-
     cvNamedWindow("dst", 1);
     cvShowImage("dst", dst);
 
     CvRect roi = cvRect(0, 0, (msg->width)/2, ((msg->height) * 0.8)); //去除复杂背景
-
     IplImage *img1 = cvCreateImage(cvGetSize(dst), dst->depth, dst->nChannels); //设置白板
     for (int y = 0; y < img1->height; y++)
     {
@@ -148,14 +116,12 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
     cvCopy(dst, img1);
     cvResetImageROI(dst);
     cvResetImageROI(img1);
-
     cvNamedWindow("result", 1);
     cvShowImage("result", img1);
 
     IplImage*edge = cvCreateImage(cvGetSize(img1), 8, 1);//canny边缘检测
     int edgeThresh = 1;
     cvCanny(img1, edge, edgeThresh, edgeThresh * 3, 3);
-
     cvNamedWindow("canny", 1);
     cvShowImage("canny", edge);
     int count = 0;
@@ -169,9 +135,9 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
                 count++;
         }
     }
-    std::cout << "num of black points:" << count << std::endl;
-    std::cout << "num of white points:" << ((edge->width) * (edge->height)) << std::endl;
-    std::cout << "num of - points:" << (((edge->width) * (edge->height)) - count) << std::endl;
+    // std::cout << "num of black points:" << count << std::endl;
+    // std::cout << "num of white points:" << ((edge->width) * (edge->height)) << std::endl;
+    // std::cout << "num of - points:" << (((edge->width) * (edge->height)) - count) << std::endl;
 
     int dianshu_threshold = (((edge->width) * (edge->height)) - count) / 4; //将白色像素点数的四分之一作为hough变换的阈值
     IplImage* houghtu = cvCreateImage(cvGetSize(edge), IPL_DEPTH_8U, 1);//hough直线变换
@@ -197,8 +163,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
         }
     }
 
-    std::cout << "num of dianshu_threshold:" << dianshu_threshold << std::endl;
-
+    // std::cout << "num of dianshu_threshold:" << dianshu_threshold << std::endl;
     int A = 10;
     double B = CV_PI / 10;
 
@@ -232,9 +197,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
             break;
         }
     }
-
-
-
 
     for (k= 0; k < lines->total; k++)//画出直线
     {
@@ -279,23 +241,23 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
 
         }
     }
-    printf("num=%d\n", num);
-    printf("arr[0].x=%d\n", arr[0].x);
-    printf("arr[0].y=%d\n", arr[0].y);
-    printf("arr[1].x=%d\n", arr[1].x);
-    printf("arr[1].y=%d\n", arr[1].y);
-    printf("arr[2].x=%d\n", arr[2].x);
-    printf("arr[2].y=%d\n", arr[2].y);
-    printf("arr[3].x=%d\n", arr[3].x);
-    printf("arr[3].y=%d\n", arr[3].y);
-    printf("arr[4].x=%d\n", arr[4].x);
-    printf("arr[4].y=%d\n", arr[4].y);
-    printf("arr[5].x=%d\n", arr[5].x);
-    printf("arr[5].y=%d\n", arr[5].y);
-    printf("arr[6].x=%d\n", arr[6].x);
-    printf("arr[6].y=%d\n", arr[6].y);
-    printf("arr[7].x=%d\n", arr[7].x);
-    printf("arr[7].y=%d\n", arr[7].y);
+    // printf("num=%d\n", num);
+    // printf("arr[0].x=%d\n", arr[0].x);
+    // printf("arr[0].y=%d\n", arr[0].y);
+    // printf("arr[1].x=%d\n", arr[1].x);
+    // printf("arr[1].y=%d\n", arr[1].y);
+    // printf("arr[2].x=%d\n", arr[2].x);
+    // printf("arr[2].y=%d\n", arr[2].y);
+    // printf("arr[3].x=%d\n", arr[3].x);
+    // printf("arr[3].y=%d\n", arr[3].y);
+    // printf("arr[4].x=%d\n", arr[4].x);
+    // printf("arr[4].y=%d\n", arr[4].y);
+    // printf("arr[5].x=%d\n", arr[5].x);
+    // printf("arr[5].y=%d\n", arr[5].y);
+    // printf("arr[6].x=%d\n", arr[6].x);
+    // printf("arr[6].y=%d\n", arr[6].y);
+    // printf("arr[7].x=%d\n", arr[7].x);
+    // printf("arr[7].y=%d\n", arr[7].y);
 
     CvPoint arr1[8] = { { 0, 0 } };//将重复的角点剔除
     int num1 = 0;
@@ -312,9 +274,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
             arr1[num1] = arr[r];
             num1++;
         }
-
     }
-
 
     printf("num1=%d\n", num1);
     printf("arr1[0].x=%d\n", arr1[0].x);
@@ -345,80 +305,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr &msg)
     cvNamedWindow("houghtu", 1);
     cvShowImage("houghtu", houghtu);
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // CvRect roi = cvRect(30, 30,120,120);//去除复杂背景
-
-    // IplImage* img1 = cvCreateImage(cvGetSize(dst), dst->depth, dst->nChannels);
-    // for (int y = 0; y < img1->height; y++)
-    // {
-    //     for (int x = 0; x < img1->width; x++)
-    //     {
-    //         CvScalar cs = (255);
-    //         cvSet2D(img1, y, x, cs);
-    //     }
-    // }
-    // CvRect roi1 = cvRect(30, 30, 120, 120);
-    // cvNamedWindow("img1");
-    // cvShowImage("img1", img1);
-
-    // cvSetImageROI(dst, roi);
-    // cvSetImageROI(img1, roi1);
-    // cvCopy(dst, img1);
-    // cvResetImageROI(dst);
-    // cvResetImageROI(img1);
-
-    // cvNamedWindow("result", 1);
-    // cvShowImage("result", img1);
-
-    // IplImage*edge = cvCreateImage(cvGetSize(img1), 8, 1);//canny边缘检测
-    // int edgeThresh = 1;
-    // cvCanny(img1, edge, edgeThresh, edgeThresh * 3, 3);
-
-    // cvNamedWindow("canny", 1);
-    // cvShowImage("canny", edge);
-
-
-
-
-
-    // cv::Mat M(img, true);
-    // Mat img_ = cvarrToMat(img);
-
-    // imshow("原图", img_);
     cvWaitKey(10000);
-    // cvtColor(cameraFeed, cameraFeed, CV_RGB2GRAY);
-    // vector<Point2f> corners;
-
-    // goodFeaturesToTrack(cameraFeed, corners, 23, 0.01, 10); //检测
-
-    // cvtColor(cameraFeed, cameraFeed, CV_GRAY2BGR);
-    // for (int i = 0; i < corners.size(); i++)       //画点
-    // {
-    //     circle(cameraFeed, Point(corners[i].x, corners[i].y), 4, Scalar(255, 0, 255), 2);
-    // }
-
-    // imshow("效果图", cameraFeed);
-    // cvWaitKey(10000);
-
-
-    // try
-    // {
-    //     cv::imshow("view", cv_bridge::toCvShare(msg, "bgr8")->image);
-    //     cv::waitKey(30);
-    // }
-    // catch (cv_bridge::Exception &e)
-    // {
-    //     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
-    // }
 }
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "lidar_camera_extrinsic_calibration_node");
     ros::NodeHandle node;
     ros::NodeHandle n("~");
-
     ros::Subscriber sub = n.subscribe("/camera/image_color", 1000, imageCallback);
     ros::spin();
-
     return 0;
 }

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package>
   <name>Quadrilateral_Corner_Extraction</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>The lidar_function package</description>
-  <maintainer email="yuki@ertl.jp">kitsukawa</maintainer>
+  <maintainer email="153415292@qq.com">yw</maintainer>
   <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
   
@@ -15,7 +15,6 @@
   <build_depend>message_generation</build_depend>
   <build_depend>cv_bridge</build_depend>
   
-  
   <run_depend>message_runtime</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
@@ -24,7 +23,6 @@
   <run_depend>registration</run_depend>
   <run_depend>cv_bridge</run_depend>
 
-  
   <export>
   </export>
 </package>
